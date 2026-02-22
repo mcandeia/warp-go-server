@@ -137,6 +137,8 @@ Once registered, the server automatically forwards incoming requests:
 
 ## Project Structure
 
+Current layout — everything lives in a single flat package:
+
 ```
 .
 ├── main.go               # Entry point, HTTP server setup, middleware
@@ -151,6 +153,50 @@ Once registered, the server automatically forwards incoming requests:
         ├── writable_stream.go     # Writable stream abstraction
         └── server_test.go         # Tests
 ```
+
+### Proposed reorganization
+
+**Approach 1 — Split by concern (protocol vs. transport vs. proxy)**
+
+Group files around what they do rather than where they live:
+
+```
+.
+├── main.go
+└── pkg/
+    ├── protocol/          # Message types and serialization
+    │   ├── messages.go
+    │   ├── messages_serializer.go
+    │   ├── json_serializer.go
+    │   └── arraybuffer_serializer.go
+    ├── tunnel/            # WebSocket transport layer
+    │   ├── ws.go
+    │   └── writable_stream.go
+    └── proxy/             # HTTP reverse-proxy and routing
+        ├── server.go
+        └── server_test.go
+```
+
+This makes `protocol`, `tunnel`, and `proxy` independently importable and testable — useful if a client library later reuses the protocol or transport layer.
+
+---
+
+**Approach 2 — Flatten into `internal/` with logical file grouping**
+
+Keep a single package but move it under `internal/` (preventing accidental external imports) and rename files so their purpose is self-evident:
+
+```
+.
+├── main.go
+└── internal/
+    ├── handler.go         # HTTP and WebSocket request handlers (was server.go)
+    ├── message.go         # Message type definitions (was messages.go)
+    ├── serializer.go      # All serializer implementations merged (was *_serializer.go)
+    ├── stream.go          # WebSocket channel + writable stream (was ws.go + writable_stream.go)
+    └── handler_test.go    # Tests
+```
+
+This reduces the file count from 8 to 5, eliminates the redundant `pkg/server/` nesting, and groups the two serializer files that always change together.
 
 ## Configuration
 
