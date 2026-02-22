@@ -1,6 +1,8 @@
 # warp-go-server
 
-A lightweight reverse tunnel server written in Go that forwards HTTP requests to clients over WebSocket connections — similar to [ngrok](https://ngrok.com/) or [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/).
+> Expose your local services to the internet — no firewall rules, no static IPs, just WebSockets.
+
+`warp-go-server` is a lightweight reverse tunnel server written in Go. Think of it as your own personal [ngrok](https://ngrok.com/) or [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/): it lets you share a locally running HTTP service with the world through a persistent WebSocket tunnel.
 
 ## How It Works
 
@@ -13,16 +15,16 @@ Internet ──► warp-go-server ──► WebSocket ──► Your local servi
 3. Incoming HTTP requests for that domain are forwarded through the WebSocket tunnel to your local service
 4. Your service handles the request and streams the response back through the same tunnel
 
-This allows you to expose a locally running HTTP service to the public internet without opening any inbound ports.
+No inbound ports. No firewall changes. Just connect and go.
 
 ## Features
 
-- WebSocket-based persistent tunnel
-- Streaming request and response bodies (chunked transfer)
-- Multiple concurrent tunnel clients, each with their own domain
-- Request tracing via `X-Request-Id` headers
-- Health check endpoint
-- Graceful shutdown on `SIGINT`/`SIGTERM`
+- **WebSocket-based persistent tunnel** — one long-lived connection handles all traffic
+- **Streaming support** — request and response bodies are chunked for efficient transfer
+- **Multiple clients** — run many tunnel clients simultaneously, each with their own domain
+- **Request tracing** — every request gets an `X-Request-Id` header for easy debugging
+- **Health check endpoint** — quickly verify the server is up and ready
+- **Graceful shutdown** — handles `SIGINT`/`SIGTERM` cleanly without dropping active connections
 
 ## Getting Started
 
@@ -42,17 +44,17 @@ go build -o warp-go-server .
 ./warp-go-server -port 8001
 ```
 
-By default the server listens on port `8001`.
+The server starts on port `8001` by default. Once it's running, your tunnel clients can connect and start registering domains.
 
 ## API
 
 ### `/_healthcheck`
 
-Returns `OK` (HTTP 200) when the server is healthy, or HTTP 503 when shutting down.
+Returns `OK` (HTTP 200) when the server is healthy, or HTTP 503 when it's shutting down. Use this for load balancer health probes or uptime monitoring.
 
 ### `/_connect` (WebSocket)
 
-Tunnel endpoint. Clients connect here and register their domain.
+The tunnel endpoint. Clients connect here, register their domain, and the server begins forwarding matching HTTP requests to them.
 
 **Client → Server messages:**
 
@@ -70,11 +72,11 @@ Tunnel endpoint. Clients connect here and register their domain.
 
 | Type | Description |
 |------|-------------|
-| `registered` | Acknowledgement that the domain was registered |
+| `registered` | Acknowledgement that the domain was registered successfully |
 | `request-start` | Notify client of an incoming HTTP request |
 | `request-data` | Send a chunk of the HTTP request body |
 | `request-end` | Signal end of the HTTP request body |
-| `error` | Report an error |
+| `error` | Report an error back to the client |
 
 ### Registration flow
 
@@ -96,6 +98,8 @@ Tunnel endpoint. Clients connect here and register their domain.
 ```
 
 ### Request forwarding flow
+
+Once registered, the server automatically forwards incoming requests:
 
 ```
 1. External HTTP request arrives at warp-go-server for "myapp.example.com"
@@ -140,6 +144,10 @@ go test ./...
 
 - [gorilla/websocket](https://github.com/gorilla/websocket) — WebSocket implementation
 - [google/uuid](https://github.com/google/uuid) — UUID generation for request/client IDs
+
+## Contributing
+
+Issues and pull requests are welcome! Feel free to open an issue if you run into a bug or have an idea for an improvement.
 
 ## License
 
