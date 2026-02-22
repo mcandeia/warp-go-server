@@ -1,8 +1,10 @@
-# warp-go-server
+# Welcome to warp-go-server
 
 > Expose your local services to the internet — no firewall rules, no static IPs, just WebSockets.
 
 `warp-go-server` is a lightweight reverse tunnel server written in Go. Think of it as your own personal [ngrok](https://ngrok.com/) or [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/): it lets you share a locally running HTTP service with the world through a persistent WebSocket tunnel.
+
+Whether you're demoing a project, testing a webhook locally, or sharing a dev environment with a teammate, `warp-go-server` has you covered. Set it up in seconds and start tunneling!
 
 ## How It Works
 
