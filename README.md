@@ -8,8 +8,26 @@ Whether you're demoing a project, testing a webhook locally, or sharing a dev en
 
 ## How It Works
 
-```
-Internet ──► warp-go-server ──► WebSocket ──► Your local service
+```mermaid
+sequenceDiagram
+    participant C as Tunnel Client<br/>(your local service)
+    participant S as warp-go-server
+    participant E as External HTTP Client
+
+    Note over C,S: Registration Phase
+    C->>S: WebSocket connect (/_connect)
+    C->>S: register {domain: "myapp.example.com"}
+    S-->>C: registered {domain: "myapp.example.com"}
+
+    Note over C,S,E: Request Forwarding Phase
+    E->>S: HTTP request for myapp.example.com
+    S->>C: request-start {method, url, headers}
+    S->>C: request-data {body chunk...}
+    S->>C: request-end
+    C->>S: response-start {status, headers}
+    C->>S: data {body chunk...}
+    C->>S: data-end
+    S-->>E: HTTP response
 ```
 
 1. Your local service connects to `warp-go-server` via WebSocket (`/_connect`)
